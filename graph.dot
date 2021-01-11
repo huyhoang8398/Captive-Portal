@@ -1,0 +1,39 @@
+digraph G { 
+    label = "Net Lab";
+    labelloc = top;
+ 
+    node [shape=record];
+    edge [dir=both];
+subgraph cluster_0 {
+		label = hA;
+	
+        "hA-eth0" [label=<
+            <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+                <tr><td bgcolor="lightblue"><b>hA-eth0</b></td></tr>
+                <tr><td align="left">IP: 10.10.10.10/24</td></tr>
+            </table>
+        >];
+	}
+subgraph cluster_1 {
+		label = hB;
+	
+        "hB-eth0" [label=<
+            <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+                <tr><td bgcolor="lightblue"><b>hB-eth0</b></td></tr>
+                <tr><td align="left">IP: 10.10.10.11/24</td></tr>
+            </table>
+        >];
+	}
+subgraph cluster_2 {
+		label = mS;
+	
+        "mS" [label=<
+            <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+                <tr><td bgcolor="orange"><b>mS</b></td></tr>
+            </table>
+        >];
+	}
+ "mS"->"hA-eth0"; 
+ "mS"->"hB-eth0"; 
+ "mS"->"mVM-eth0"; 
+}

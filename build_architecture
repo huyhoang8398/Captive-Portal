@@ -1,0 +1,50 @@
+#!/bin/bash -x
+
+# create host namespace
+ip netns add hA
+ip netns add hB
+
+# create switch
+ovs-vsctl add-br mS
+
+# create the links
+ip link add hA-eth0 type veth peer name mS-hA
+ip link add hB-eth0 type veth peer name mS-hB
+ip link add meth0 type veth peer name mS-meth0
+
+# hook links to namespaces
+ip link set hA-eth0 netns hA
+ip link set hB-eth0 netns hB
+
+# connect the links to switch
+ovs-vsctl add-port mS mS-hA 
+ovs-vsctl add-port mS mS-hB 
+ovs-vsctl add-port mS mS-meth0
+
+# activate the interfaces
+ip link set dev mS-hA up
+ip link set dev mS-hB up
+ip link set dev mS-meth0 up
+ip link set dev meth0 up
+
+# activate the interfaces of hostA and hostB 
+ip netns exec hA ip link set dev hA-eth0 up
+ip netns exec hB ip link set dev hB-eth0 up
+ip netns exec hA ip link set dev lo up
+ip netns exec hB ip link set dev lo up
+
+# activate the interfaces of myVM
+ip link set dev meth0 up
+ip link set dev lo up
+
+# config network on switch and internet
+ip netns exec hA ip a add dev hA-eth0 10.10.10.10/24
+ip netns exec hB ip a add dev hB-eth0 10.10.10.11/24
+ip a add dev meth0 10.10.10.1/24
+
+#routing
+ip netns exec hA ip r add default via 10.10.10.1
+ip netns exec hB ip r add default via 10.10.10.1 
+
+# activate routing on myVM
+sysctl net.ipv4.conf.all.forwarding=1

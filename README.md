@@ -6,7 +6,7 @@ A captive portal is a web page accessed with a web browser that is displayed to 
 
 # II. Configuring network
 
-![Network Architecture](../graph.png)
+![Network Architecture](graph.png)
 
 # III. Configuring DHCP Server and DNS Service
 
@@ -15,7 +15,7 @@ A captive portal is a web page accessed with a web browser that is displayed to 
 sudo dnsmasq -d -z -i meth0 -F 10.10.10.10,10.10.10.20
 ```
 
-![Execute dnsmasq for DHCP](../report_imgs/DHCP_VM.png)
+![Execute dnsmasq for DHCP](./report_imgs/DHCP_VM.png)
 
 ```bash
 sudo ip netns exec hA dhclient -d hA-eth0 
@@ -24,7 +24,7 @@ sudo ip netns exec hB dhclient -d hB-eth0
 
 For tracing the packet exchanges, we use tcpdump on the DHCP server for port 67 or 68, the result is shown below
 
-![A trace of the packet exchanges on the DHCP server](../report_imgs/DHCP_tcpdump.png){ width=70% }
+![A trace of the packet exchanges on the DHCP server](./report_imgs/DHCP_tcpdump.png){ width=70% }
 
 # III. Configuring Firewall
 
@@ -44,19 +44,19 @@ sudo iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 80 -j DNAT --
 sudo iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.10.10.1:8080
 ```
 
-![Nat tables before config](../report_imgs/nattables_beforeConfig.png)
+![Nat tables before config](./report_imgs/nattables_beforeConfig.png)
 
-![Nat tables after config](../report_imgs/nattables_afterConfig.png)
+![Nat tables after config](./report_imgs/nattables_afterConfig.png)
 
-![Nat tables after authentication](../report_imgs/nattables_afterAuth.png)
+![Nat tables after authentication](./report_imgs/nattables_afterAuth.png)
 
 The result below shows an output of the "iptables -nL" command for the different modified tables as before config, after config and after authentication.
 
-![IP Tables before config](../report_imgs/iptables_beforeConfig.png)
+![IP Tables before config](./report_imgs/iptables_beforeConfig.png)
 
-![IP Tables after config](../report_imgs/iptables_afterConfig.png)
+![IP Tables after config](./report_imgs/iptables_afterConfig.png)
 
-![IP Tables after authentication](../report_imgs/iptables_afterAuth.png)
+![IP Tables after authentication](./report_imgs/iptables_afterAuth.png)
 
 # IV. TCP Server
 
@@ -76,9 +76,9 @@ def getCookies(username, password, token):
 
 If the client logins successfully, we will update our firewall with the `remote_IP` and redirect to a successful webpage otherwise, the client will be returned to a login page with a alert message.
 
-![Login page](../report_imgs/login.png){ width=90% }
+![Login page](./report_imgs/login.png)
 
-![Success page](../report_imgs/success.png){ width=90% }
+![Success page](./report_imgs/success.png)
 
-![Failed page](../report_imgs/failed.png){ width=90% }
+![Failed page](./report_imgs/failed.png)
 

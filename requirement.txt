@@ -1,6 +1,6 @@
-    - # 1.sudo apt-get install python3-bs4 (Beautiful Shop)
-    - # 2.sudo apt-get install openvswitch-switch (virtual switch)
-    - # 3.sudo /usr/share/openvswitch/scripts/ovs-ctl start (start ovs)
+- # 1.sudo apt-get install python3-bs4 (Beautiful Shop)
+- # 2.sudo apt-get install openvswitch-switch (virtual switch)
+- # 3.sudo /usr/share/openvswitch/scripts/ovs-ctl start (start ovs)
 - 4. sudo ./build_architecture 
 - 5. python3 network_graph.py > graph.dot
 - 6. dot -Tpng graph.dot -o graph.png

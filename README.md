@@ -24,7 +24,7 @@ sudo ip netns exec hB dhclient -d hB-eth0
 
 For tracing the packet exchanges, we use tcpdump on the DHCP server for port 67 or 68, the result is shown below
 
-![A trace of the packet exchanges on the DHCP server](./report_imgs/DHCP_tcpdump.png){ width=70% }
+![A trace of the packet exchanges on the DHCP server](./report_imgs/DHCP_tcpdump.png)
 
 # III. Configuring Firewall
 

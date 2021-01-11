@@ -1,31 +1,84 @@
-    - # 1.sudo apt-get install python3-bs4 (Beautiful Shop)
-    - # 2.sudo apt-get install openvswitch-switch (virtual switch)
-    - # 3.sudo /usr/share/openvswitch/scripts/ovs-ctl start (start ovs)
-- 4. sudo ./build_architecture 
-- 5. python3 network_graph.py > graph.dot
-- 6. dot -Tpng graph.dot -o graph.png
-    - # 7.create /etc/netns/hA/resolv.conf (nameserver...)
-    - # 8.create /etc/netns/hB/resolv.conf
-- 9.sudo ip netns exec hA cat /etc/resolv.conf
-- 10.sudo ip netns exec hB cat /etc/resolv.conf
-    - # 11.sudo ovs-vsctl list-br
-    - # 12.sudo ip link set mS up
-    - # 13.sudo ip l show mS
-    - # 14.sudo ip a add dev mS 192.168.10.253/24
-    - # 15.sudo ip netns exec hA ping -c 1 192.168.10.253
-----------------------DHCP-------------------------------
-- 16.sudo dnsmasq -d -z -i meth0 -F 10.10.10.10,10.10.10.20
-- 17.sudo ip netns exec hA dhclient -d hA-eth0 (just for test)
-- 18.sudo ip netns exec hB dhclient -d hB-eth0 (just for test)
-- 19.sudo tcpdump -l -v -i mS-hA port 67 or port 68 (just for test)
-----------------------FIREWALL SETUP-------------------------------(should run "iptables -F" and "iptables -t nat -F") 
-- 20.iptables -I FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
-- 21.iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -j MASQUERADE (private network)
-- 22.iptables -A FORWARD -s 10.10.10.0/24 -p tcp --dport 53 -j ACCEPT (accept dns traffic)
-- 23.iptables -A FORWARD -s 10.10.10.0/24 -p udp --dport 53 -j ACCEPT (accept dns traffic)
-- 24.iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.10.10.1:8080 (redirect http to portal)
-- 25.iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.10.10.1:8080 (redirect https to portal)
-----------------------TCP SEVER-------------------------------------(include firewall setup)
-- 26.sudo python3 myServer.py (run server)
-- 27.sudo ip netns exec hA sudo -u wings firefox (open firefox on hA)
----------------------------------------------------------------------
+# I. Introduction 
+
+## Context and Motivation
+
+A captive portal is a web page accessed with a web browser that is displayed to newly connected users of a Wi-Fi or wired network before they are granted broader access to network resources. Captive portals are commonly used to present a landing or log-in page which may require authentication, payment, acceptance of an end-user license agreement, acceptable use policy, survey completion, or other valid credentials that both the host and user agree to to redirect users of a network that provides outbound internet access to a web page that displays the terms of service.
+
+# II. Configuring network
+
+![Network Architecture](../graph.png)
+
+# III. Configuring DHCP Server and DNS Service
+
+
+```bash
+sudo dnsmasq -d -z -i meth0 -F 10.10.10.10,10.10.10.20
+```
+
+![Execute dnsmasq for DHCP](../report_imgs/DHCP_VM.png)
+
+```bash
+sudo ip netns exec hA dhclient -d hA-eth0 
+sudo ip netns exec hB dhclient -d hB-eth0
+```
+
+For tracing the packet exchanges, we use tcpdump on the DHCP server for port 67 or 68, the result is shown below
+
+![A trace of the packet exchanges on the DHCP server](../report_imgs/DHCP_tcpdump.png){ width=70% }
+
+# III. Configuring Firewall
+
+For configuring the firewall, we set some rules in NAT and FILTER table.
+
+```bash
+sudo iptables -I FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -j MASQUERADE (private network)
+sudo iptables -A FORWARD -s 10.10.10.0/24 -p tcp --dport 53 -j ACCEPT
+sudo iptables -A FORWARD -s 10.10.10.0/24 -p udp --dport 53 -j ACCEPT
+```
+
+For redirecting traffic from the private network to the destination of the Web:
+
+```bash
+sudo iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.10.10.1:8080
+sudo iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.10.10.1:8080
+```
+
+![Nat tables before config](../report_imgs/nattables_beforeConfig.png)
+
+![Nat tables after config](../report_imgs/nattables_afterConfig.png)
+
+![Nat tables after authentication](../report_imgs/nattables_afterAuth.png)
+
+The result below shows an output of the "iptables -nL" command for the different modified tables as before config, after config and after authentication.
+
+![IP Tables before config](../report_imgs/iptables_beforeConfig.png)
+
+![IP Tables after config](../report_imgs/iptables_afterConfig.png)
+
+![IP Tables after authentication](../report_imgs/iptables_afterAuth.png)
+
+# IV. TCP Server
+
+In this section, we implement a TCP server which serve a login page for client request to access a website in external network.
+In order to authenticate, we use a perform secure authentication with CAS Unilim server by using `LemonLDAP`
+
+```python
+def getCookies(username, password, token):
+    cookieProcessor = urllib.request.HTTPCookieProcessor()
+    opener = urllib.request.build_opener(cookieProcessor)
+    data = urllib.parse.urlencode({'user': username, 'password': password, 'token': token})
+    request = urllib.request.Request('https://cas.unilim.fr', bytes(data, encoding='ascii'))
+    reponse = opener.open(request)
+    cookies = [c for c in cookieProcessor.cookiejar if c.name == 'lemonldap']
+    return cookies
+```
+
+If the client logins successfully, we will update our firewall with the `remote_IP` and redirect to a successful webpage otherwise, the client will be returned to a login page with a alert message.
+
+![Login page](../report_imgs/login.png){ width=90% }
+
+![Success page](../report_imgs/success.png){ width=90% }
+
+![Failed page](../report_imgs/failed.png){ width=90% }
+

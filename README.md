@@ -1,0 +1,31 @@
+    - # 1.sudo apt-get install python3-bs4 (Beautiful Shop)
+    - # 2.sudo apt-get install openvswitch-switch (virtual switch)
+    - # 3.sudo /usr/share/openvswitch/scripts/ovs-ctl start (start ovs)
+- 4. sudo ./build_architecture 
+- 5. python3 network_graph.py > graph.dot
+- 6. dot -Tpng graph.dot -o graph.png
+    - # 7.create /etc/netns/hA/resolv.conf (nameserver...)
+    - # 8.create /etc/netns/hB/resolv.conf
+- 9.sudo ip netns exec hA cat /etc/resolv.conf
+- 10.sudo ip netns exec hB cat /etc/resolv.conf
+    - # 11.sudo ovs-vsctl list-br
+    - # 12.sudo ip link set mS up
+    - # 13.sudo ip l show mS
+    - # 14.sudo ip a add dev mS 192.168.10.253/24
+    - # 15.sudo ip netns exec hA ping -c 1 192.168.10.253
+----------------------DHCP-------------------------------
+- 16.sudo dnsmasq -d -z -i meth0 -F 10.10.10.10,10.10.10.20
+- 17.sudo ip netns exec hA dhclient -d hA-eth0 (just for test)
+- 18.sudo ip netns exec hB dhclient -d hB-eth0 (just for test)
+- 19.sudo tcpdump -l -v -i mS-hA port 67 or port 68 (just for test)
+----------------------FIREWALL SETUP-------------------------------(should run "iptables -F" and "iptables -t nat -F") 
+- 20.iptables -I FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+- 21.iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -j MASQUERADE (private network)
+- 22.iptables -A FORWARD -s 10.10.10.0/24 -p tcp --dport 53 -j ACCEPT (accept dns traffic)
+- 23.iptables -A FORWARD -s 10.10.10.0/24 -p udp --dport 53 -j ACCEPT (accept dns traffic)
+- 24.iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.10.10.1:8080 (redirect http to portal)
+- 25.iptables -t nat -A PREROUTING -s 10.10.10.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.10.10.1:8080 (redirect https to portal)
+----------------------TCP SEVER-------------------------------------(include firewall setup)
+- 26.sudo python3 myServer.py (run server)
+- 27.sudo ip netns exec hA sudo -u wings firefox (open firefox on hA)
+---------------------------------------------------------------------
